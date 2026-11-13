@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord · NDIAYE DIGITAL PRO{% endblock %}
+{% block content %}
+<div class="dash-head">
+  <div>
+    <div class="eyebrow">ESPACE COMMERÇANT</div>
+    <h1>{{ shop_name }}</h1>
+    <p class="muted">Bienvenue dans votre espace de gestion.</p>
+  </div>
+  <a class="btn ghost" href="/logout">Déconnexion</a>
+</div>
+
+<div class="stats">
+  <article><span>Ventes</span><strong>—</strong><small>Module à construire</small></article>
+  <article><span>Produits</span><strong>—</strong><small>Module à construire</small></article>
+  <article><span>Commandes</span><strong>—</strong><small>Module à construire</small></article>
+</div>
+
+<section class="panel">
+  <h2>Votre espace est prêt à évoluer.</h2>
+  <p>Cette première version valide la création de compte et l'accès privé. Les modules de stock, ventes, commandes et boutique seront ajoutés dans les prochaines phases.</p>
+  <span class="tag">PHASE 1 · FONDATIONS</span>
+</section>
+{% endblock %}
