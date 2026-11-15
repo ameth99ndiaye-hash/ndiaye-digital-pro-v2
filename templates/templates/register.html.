@@ -10,7 +10,7 @@
 
   <form method="POST">
     <label>Nom de votre boutique</label>
-    <input type="text" name="store_name" placeholder="Nom de la boutique" required>
+    <input type="text" name="shop_name" placeholder="Nom de la boutique" required>
 
     <label>Votre nom</label>
     <input type="text" name="owner_name" placeholder="Nom complet" required>
