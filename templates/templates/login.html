@@ -1,0 +1,24 @@
+
+{% extends "base.html" %}
+{% block title %}Connexion · NDIAYE DIGITAL PRO{% endblock %}
+{% block content %}
+
+<section class="auth-card">
+  <div class="eyebrow">ESPACE COMMERÇANT</div>
+  <h1>Bon retour.</h1>
+  <p>Connectez-vous à votre espace professionnel.</p>
+
+  <form method="POST">
+    <label>Adresse e-mail</label>
+    <input type="email" name="email" placeholder="Votre adresse e-mail" required>
+
+    <label>Mot de passe</label>
+    <input type="password" name="password" placeholder="Votre mot de passe" required>
+
+    <button class="btn gold" type="submit">Se connecter</button>
+  </form>
+
+  <p>Pas encore de compte ? <a href="/register">Créer mon espace</a></p>
+</section>
+
+{% endblock %}
