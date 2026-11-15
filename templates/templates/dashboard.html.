@@ -1,0 +1,32 @@
+
+{% extends "base.html" %}
+{% block title %}Tableau de bord · NDIAYE DIGITAL PRO{% endblock %}
+{% block content %}
+
+<section class="dashboard">
+  <div class="eyebrow">ESPACE PROFESSIONNEL</div>
+  <h1>Bienvenue sur <em>NDIAYE DIGITAL PRO.</em></h1>
+  <p>Votre espace de gestion commerciale.</p>
+
+  <div class="features">
+    <article>
+      <b>01</b>
+      <h3>Produits</h3>
+      <p>Organisez votre catalogue.</p>
+    </article>
+
+    <article>
+      <b>02</b>
+      <h3>Ventes</h3>
+      <p>Suivez vos activités commerciales.</p>
+    </article>
+
+    <article>
+      <b>03</b>
+      <h3>Clients</h3>
+      <p>Retrouvez vos informations clients.</p>
+    </article>
+  </div>
+</section>
+
+{% endblock %}
