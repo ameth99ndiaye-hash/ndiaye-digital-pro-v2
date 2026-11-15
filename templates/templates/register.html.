@@ -1,0 +1,30 @@
+
+{% extends "base.html" %}
+{% block title %}Inscription · NDIAYE DIGITAL PRO{% endblock %}
+{% block content %}
+
+<section class="auth-card">
+  <div class="eyebrow">REJOIGNEZ NDP</div>
+  <h1>Créer mon espace.</h1>
+  <p>Commencez à organiser votre activité.</p>
+
+  <form method="POST">
+    <label>Nom de votre boutique</label>
+    <input type="text" name="store_name" placeholder="Nom de la boutique" required>
+
+    <label>Votre nom</label>
+    <input type="text" name="owner_name" placeholder="Nom complet" required>
+
+    <label>Adresse e-mail</label>
+    <input type="email" name="email" placeholder="Votre e-mail" required>
+
+    <label>Mot de passe</label>
+    <input type="password" name="password" minlength="8" placeholder="8 caractères minimum" required>
+
+    <button class="btn gold" type="submit">Créer mon compte</button>
+  </form>
+
+  <p>Vous avez déjà un compte ? <a href="/login">Se connecter</a></p>
+</section>
+
+{% endblock %}
