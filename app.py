@@ -263,7 +263,18 @@ def logout():
 
 @app.get("/health")
 def health():
-    return {"status":"ok","app":"NDIAYE DIGITAL PRO","phase":2}
+    # This reports configuration only; business data still uses SQLite until
+    # the authenticated Supabase repository layer is implemented and tested.
+    supabase_configured = bool(
+        os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_PUBLISHABLE_KEY")
+    )
+    return {
+        "status": "ok",
+        "app": "NDIAYE DIGITAL PRO",
+        "phase": 2,
+        "supabase_configuration": "present" if supabase_configured else "missing",
+        "data_backend": "sqlite",
+    }
 
 init_db()
 
