@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: ndiaye-digital-pro-preview
+    runtime: python
+    plan: free
+    branch: repair/ndiaye-digital-pro
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    healthCheckPath: /health
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "1"
+      - key: DATABASE_PATH
+        value: /tmp/ndiaye_digital_preview.db
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
