@@ -1,6 +1,7 @@
 import os
 import secrets
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
 from functools import wraps
 from datetime import date
@@ -22,11 +23,19 @@ app.config.update(
 DB = Path(os.getenv("DATABASE_PATH", "instance/ndiaye_digital.db"))
 DB.parent.mkdir(parents=True, exist_ok=True)
 
+@contextmanager
 def db():
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA foreign_keys = ON")
-    return con
+    try:
+        yield con
+        con.commit()
+    except Exception:
+        con.rollback()
+        raise
+    finally:
+        con.close()
 
 def init_db():
     with db() as con:
