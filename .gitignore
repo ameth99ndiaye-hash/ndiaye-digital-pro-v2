@@ -1,0 +1,17 @@
+# Secrets locaux
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Base SQLite locale et données d'instance
+instance/*.db
+instance/*.sqlite
+instance/*.sqlite3
+
+# Outils locaux
+.DS_Store
+.vscode/
