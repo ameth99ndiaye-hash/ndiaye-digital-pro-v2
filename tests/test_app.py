@@ -139,5 +139,14 @@ class NdiayeDigitalProTests(unittest.TestCase):
         self.assertIn(b"Enregistrer une vente", response.data)
 
 
+    def test_csrf_blocks_post_without_token(self):
+        application.app.config["WTF_CSRF_ENABLED"] = True
+        try:
+            response = self.client.post("/login", data={"email": "x@example.com", "password": "bad"})
+            self.assertEqual(response.status_code, 400)
+        finally:
+            application.app.config["WTF_CSRF_ENABLED"] = False
+
+
 if __name__ == "__main__":
     unittest.main()
