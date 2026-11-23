@@ -45,4 +45,7 @@ en place afin de préserver le prototype et ses données.
 - Les mouvements de stock utilisent une fonction transactionnelle dédiée.
 - Le mode SQLite reste disponible lorsque Supabase Auth est désactivé.
 
-**Limites avant ouverture commerciale :** ajouter une protection CSRF, limitation de tentatives de connexion, tests automatisés de séparation entre deux commerçants, pagination, et stockage durable des sessions (le disque local d'une instance gratuite Render peut être éphémère). Ne pas traiter le système de paiement comme intégré : Wave et Orange Money ne sont pas encore connectés.
+**Limites avant ouverture commerciale :** ajouter une limitation de tentatives de connexion, tests automatisés de séparation entre deux commerçants, pagination, et stockage durable des sessions (le disque local d'une instance gratuite Render peut être éphémère). Ne pas traiter le système de paiement comme intégré : Wave et Orange Money ne sont pas encore connectés.
+
+
+La protection CSRF Flask-WTF est activée sur les formulaires d'inscription, de connexion, de produits, de stock et de ventes. Elle est désactivée uniquement dans les tests automatisés.
