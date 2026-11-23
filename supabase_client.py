@@ -39,3 +39,13 @@ def check_supabase_connection():
     except Exception:
         # Ne jamais exposer les détails d'erreur ou les identifiants au navigateur.
         return "unavailable"
+
+
+def create_supabase_admin_client():
+    """Client privilégié réservé au backend Render; ne jamais l'exposer au navigateur."""
+    url = os.getenv("SUPABASE_URL", "").strip()
+    key = os.getenv("SUPABASE_SECRET_KEY", "").strip()
+    if not url or not key:
+        raise RuntimeError("SUPABASE_URL or SUPABASE_SECRET_KEY is missing")
+    from supabase import create_client
+    return create_client(url, key)
