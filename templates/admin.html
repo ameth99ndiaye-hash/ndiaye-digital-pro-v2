@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Administration · NDIAYE DIGITAL PRO{% endblock %}
+{% block content %}
+<section class="form-card">
+  <div class="eyebrow">ESPACE ADMINISTRATEUR</div>
+  <h1>Créer un compte commerçant</h1>
+  {% if not secret_ready %}<p class="notice">Ajoute SUPABASE_SECRET_KEY dans les variables privées Render avant de créer des comptes. Ne partage jamais cette clé dans le chat ou dans GitHub.</p>{% endif %}
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Nom de la boutique</label><input name="shop_name" required maxlength="120">
+    <label>Nom du responsable</label><input name="owner_name" required maxlength="120">
+    <label>E-mail du commerçant</label><input type="email" name="email" required>
+    <button class="btn gold full" {% if not secret_ready %}disabled{% endif %}>Créer le compte</button>
+  </form>
+  {% if temporary_credentials %}
+  <div class="notice"><strong>Compte créé. Note ces identifiants maintenant :</strong><br>E-mail : {{ temporary_credentials.email }}<br>Mot de passe temporaire : {{ temporary_credentials.password }}<br>Communique-les au commerçant de façon privée. Cette page ne les conservera pas.</div>
+  {% endif %}
+</section>
+{% endblock %}
