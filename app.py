@@ -174,7 +174,7 @@ def admin_required(fn):
 @admin_required
 def admin():
     temporary_credentials = None
-    secret_ready = bool(os.getenv("SUPABASE_SECRET_KEY", "").strip())
+    secret_ready = bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip())
     if request.method == "POST":
         shop = request.form.get("shop_name", "").strip()
         owner = request.form.get("owner_name", "").strip()
