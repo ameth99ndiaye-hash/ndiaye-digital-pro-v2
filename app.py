@@ -135,6 +135,11 @@ def login_required(fn):
 init_db()
 
 
+@app.context_processor
+def inject_admin_email():
+    return {"config_admin_email": os.getenv("ADMIN_EMAIL", "").strip().lower()}
+
+
 @app.get("/")
 def index():
     if session.get("merchant_id"):
@@ -233,11 +238,6 @@ def login():
             return redirect(url_for("dashboard"))
         flash("Identifiants incorrects.", "error")
     return render_template("login.html")
-
-
-@app.get("/admin")
-def admin_redirect():
-    return redirect(url_for("login"))
 
 
 @app.get("/dashboard")
