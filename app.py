@@ -150,6 +150,59 @@ def register():
     return redirect(url_for("login"))
 
 
+def admin_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        expected = os.getenv("ADMIN_EMAIL", "").strip().lower()
+        current = session.get("email", "").strip().lower()
+        if not expected or current != expected or not session.get("auth_sid"):
+            flash("Accès réservé à l’administrateur.", "error")
+            return redirect(url_for("login"))
+        g.auth_record = load_auth_session()
+        if not g.auth_record:
+            return redirect(url_for("login"))
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+@app.route("/admin", methods=["GET", "POST"], endpoint="admin_panel")
+@admin_required
+def admin():
+    temporary_credentials = None
+    secret_ready = bool(os.getenv("SUPABASE_SECRET_KEY", "").strip())
+    if request.method == "POST":
+        shop = request.form.get("shop_name", "").strip()
+        owner = request.form.get("owner_name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        if not secret_ready:
+            flash("Configuration incomplète : la clé secrète Supabase doit être ajoutée dans les variables privées de Render.", "error")
+        elif not all([shop, owner, email]) or email == os.getenv("ADMIN_EMAIL", "").strip().lower():
+            flash("Vérifie les champs et utilise une adresse différente de celle de l’administrateur.", "error")
+        else:
+            try:
+                from supabase_client import create_supabase_admin_client
+                admin_client = create_supabase_admin_client()
+                temporary_password = secrets.token_urlsafe(15)
+                created = admin_client.auth.admin.create_user({
+                    "email": email,
+                    "password": temporary_password,
+                    "email_confirm": True,
+                    "user_metadata": {"shop_name": shop, "owner_name": owner},
+                })
+                new_user = getattr(created, "user", None)
+                if not new_user:
+                    raise RuntimeError("Supabase n’a pas retourné le nouvel utilisateur.")
+                admin_client.table("merchants").insert({
+                    "owner_id": str(new_user.id),
+                    "shop_name": shop,
+                }).execute()
+                temporary_credentials = {"email": email, "password": temporary_password}
+            except Exception:
+                app.logger.exception("Admin account creation failed")
+                flash("La création a échoué. Vérifie la configuration Supabase et que cette adresse n’existe pas déjà.", "error")
+    return render_template("admin.html", secret_ready=secret_ready, temporary_credentials=temporary_credentials)
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -180,6 +233,11 @@ def login():
             return redirect(url_for("dashboard"))
         flash("Identifiants incorrects.", "error")
     return render_template("login.html")
+
+
+@app.get("/admin")
+def admin_redirect():
+    return redirect(url_for("login"))
 
 
 @app.get("/dashboard")
