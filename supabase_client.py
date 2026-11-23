@@ -44,8 +44,8 @@ def check_supabase_connection():
 def create_supabase_admin_client():
     """Client privilégié réservé au backend Render; ne jamais l'exposer au navigateur."""
     url = os.getenv("SUPABASE_URL", "").strip()
-    key = os.getenv("SUPABASE_SECRET_KEY", "").strip()
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
     if not url or not key:
-        raise RuntimeError("SUPABASE_URL or SUPABASE_SECRET_KEY is missing")
+        raise RuntimeError("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing")
     from supabase import create_client
     return create_client(url, key)
