@@ -97,5 +97,47 @@ class NdiayeDigitalProTests(unittest.TestCase):
             self.assertEqual(row["merchant_id"], "merchant-uuid")
 
 
+    def test_supabase_product_page_is_merchant_scoped(self):
+        from unittest.mock import patch
+        with self.client.session_transaction() as sess:
+            sess["merchant_id"] = "merchant-1"
+            sess["shop_name"] = "Boutique Test"
+            sess["auth_sid"] = "sid-test"
+        with patch.object(application, "supabase_auth_enabled", return_value=True), \
+             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \
+             patch.object(application, "list_products", return_value=[]):
+            response = self.client.get("/products")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Ajouter un produit", response.data)
+
+    def test_supabase_stock_page_loads(self):
+        from unittest.mock import patch
+        with self.client.session_transaction() as sess:
+            sess["merchant_id"] = "merchant-1"
+            sess["shop_name"] = "Boutique Test"
+            sess["auth_sid"] = "sid-test"
+        with patch.object(application, "supabase_auth_enabled", return_value=True), \
+             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \
+             patch.object(application, "list_products", return_value=[]), \
+             patch.object(application, "list_stock_movements", return_value=[]):
+            response = self.client.get("/stock")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Mouvements de stock", response.data)
+
+    def test_supabase_sales_page_loads(self):
+        from unittest.mock import patch
+        with self.client.session_transaction() as sess:
+            sess["merchant_id"] = "merchant-1"
+            sess["shop_name"] = "Boutique Test"
+            sess["auth_sid"] = "sid-test"
+        with patch.object(application, "supabase_auth_enabled", return_value=True), \
+             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \
+             patch.object(application, "list_products", return_value=[]), \
+             patch.object(application, "list_sales", return_value=[]):
+            response = self.client.get("/sales")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Enregistrer une vente", response.data)
+
+
 if __name__ == "__main__":
     unittest.main()
