@@ -1,8 +1,10 @@
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 import app as application
+from supabase_client import check_supabase_connection
 
 
 class NdiayeDigitalProTests(unittest.TestCase):
@@ -68,6 +70,11 @@ class NdiayeDigitalProTests(unittest.TestCase):
         response = self.client.get("/health")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json["status"], "ok")
+        self.assertIn(response.json["supabase"], {"not_configured", "connected", "unavailable"})
+
+    def test_supabase_reports_missing_environment_configuration(self):
+        with patch.dict("os.environ", {"SUPABASE_URL": "", "SUPABASE_PUBLISHABLE_KEY": ""}):
+            self.assertEqual(check_supabase_connection(), "not_configured")
 
 
 if __name__ == "__main__":
