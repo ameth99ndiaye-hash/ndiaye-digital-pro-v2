@@ -77,5 +77,25 @@ class NdiayeDigitalProTests(unittest.TestCase):
             self.assertEqual(check_supabase_connection(), "not_configured")
 
 
+    def test_supabase_auth_session_keeps_tokens_out_of_flask_cookie(self):
+        from types import SimpleNamespace
+        with application.app.test_request_context("/"):
+            fake_auth = SimpleNamespace(
+                access_token="access-token-private",
+                refresh_token="refresh-token-private",
+                expires_at=4102444800,
+            )
+            merchant = {"id": "merchant-uuid", "shop_name": "Boutique Secure"}
+            application.save_auth_session(fake_auth, merchant, "owner@example.com")
+            from flask import session
+            self.assertNotIn("access_token", session)
+            self.assertNotIn("refresh_token", session)
+            sid = session["auth_sid"]
+            with application.db() as con:
+                row = con.execute("SELECT * FROM auth_sessions WHERE sid=?", (sid,)).fetchone()
+            self.assertEqual(row["access_token"], "access-token-private")
+            self.assertEqual(row["merchant_id"], "merchant-uuid")
+
+
 if __name__ == "__main__":
     unittest.main()
