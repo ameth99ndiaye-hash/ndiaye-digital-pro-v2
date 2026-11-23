@@ -85,3 +85,48 @@ def merchant_counts(access_token, merchant_id):
         .eq("merchant_id", str(merchant_id)).execute().data
     )
     return {"products": len(products), "sales": len(sales)}
+
+
+def list_products(access_token, merchant_id):
+    client = create_supabase_client(access_token=access_token)
+    return (client.table("products").select("id,name,sku,quantity,min_quantity,unit_price,created_at")
+            .eq("merchant_id", str(merchant_id)).order("created_at", desc=True).execute().data)
+
+
+def create_product(access_token, merchant_id, name, sku, quantity, min_quantity, unit_price):
+    client = create_supabase_client(access_token=access_token)
+    return client.table("products").insert({
+        "merchant_id": str(merchant_id), "name": name, "sku": sku or None,
+        "quantity": quantity, "min_quantity": min_quantity, "unit_price": unit_price,
+    }).execute().data
+
+
+def adjust_stock(access_token, merchant_id, product_id, movement_type, quantity, note):
+    client = create_supabase_client(access_token=access_token)
+    return client.rpc("adjust_merchant_stock", {
+        "p_merchant_id": str(merchant_id),
+        "p_product_id": str(product_id),
+        "p_movement_type": movement_type,
+        "p_quantity": quantity,
+        "p_note": note or "",
+    }).execute().data
+
+
+def list_stock_movements(access_token, merchant_id):
+    client = create_supabase_client(access_token=access_token)
+    return (client.table("stock_movements")
+            .select("id,product_id,movement_type,quantity,note,created_at,products(name)")
+            .eq("merchant_id", str(merchant_id)).order("created_at", desc=True).limit(50).execute().data)
+
+
+def create_sale(access_token, merchant_id, items):
+    client = create_supabase_client(access_token=access_token)
+    return client.rpc("create_merchant_sale", {
+        "p_merchant_id": str(merchant_id), "p_items": items
+    }).execute().data
+
+
+def list_sales(access_token, merchant_id):
+    client = create_supabase_client(access_token=access_token)
+    return (client.table("sales").select("id,total,currency,status,created_at")
+            .eq("merchant_id", str(merchant_id)).order("created_at", desc=True).limit(50).execute().data)
