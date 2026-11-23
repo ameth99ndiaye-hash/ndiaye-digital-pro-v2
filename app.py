@@ -12,7 +12,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from supabase_client import check_supabase_connection
 from supabase_auth import (
     merchant_counts, merchant_for_user, refresh_auth_session,
-    sign_in, sign_up, supabase_auth_enabled,
+    sign_in, sign_up, supabase_auth_enabled, list_products, create_product,
+    adjust_stock, list_stock_movements, create_sale, list_sales,
 )
 
 load_dotenv()
