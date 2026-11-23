@@ -12,7 +12,7 @@ class NdiayeDigitalProTests(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         application.DB = Path(self.temp_dir.name) / "test.db"
         application.init_db()
-        application.app.config.update(TESTING=True, SECRET_KEY="test-secret")
+        application.app.config.update(TESTING=True, SECRET_KEY="test-secret", WTF_CSRF_ENABLED=False)
         self.client = application.app.test_client()
 
     def tearDown(self):
