@@ -7,6 +7,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from flask import Flask, flash, g, redirect, render_template, request, session, url_for
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from supabase_client import check_supabase_connection
@@ -19,6 +20,8 @@ from supabase_auth import (
 load_dotenv()
 
 app = Flask(__name__)
+app.config["WTF_CSRF_ENABLED"] = os.getenv("WTF_CSRF_ENABLED", "1") == "1"
+csrf = CSRFProtect(app)
 app.secret_key = os.getenv("SECRET_KEY") or secrets.token_hex(32)
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
