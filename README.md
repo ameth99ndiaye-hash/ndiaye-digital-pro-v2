@@ -34,3 +34,15 @@ dans GitHub, dans le navigateur ou dans un fichier versionné.
 L'inscription/connexion des commerçants et la synchronisation des ventes et stocks
 ne sont pas encore migrées vers Supabase. L'authentification SQLite existante reste
 en place afin de préserver le prototype et ses données.
+
+
+## Phase 2 — Authentification et gestion commerciale
+- L'authentification Supabase peut être activée avec `SUPABASE_AUTH_ENABLED=1`.
+- Les sessions serveur gardent les jetons hors du cookie du navigateur.
+- Les profils commerçants sont créés sous l'identité Supabase de l'utilisateur.
+- Les pages Produits, Stock et Ventes utilisent le jeton utilisateur et les politiques RLS.
+- Les ventes sont enregistrées par une fonction PostgreSQL transactionnelle qui met à jour le stock et l'historique.
+- Les mouvements de stock utilisent une fonction transactionnelle dédiée.
+- Le mode SQLite reste disponible lorsque Supabase Auth est désactivé.
+
+**Limites avant ouverture commerciale :** ajouter une protection CSRF, limitation de tentatives de connexion, tests automatisés de séparation entre deux commerçants, pagination, et stockage durable des sessions (le disque local d'une instance gratuite Render peut être éphémère). Ne pas traiter le système de paiement comme intégré : Wave et Orange Money ne sont pas encore connectés.
