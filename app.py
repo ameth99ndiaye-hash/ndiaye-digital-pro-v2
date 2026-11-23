@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from supabase_client import check_supabase_connection
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -134,7 +136,12 @@ def logout():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "app": "NDIAYE DIGITAL PRO", "phase": 1}
+    return {
+        "status": "ok",
+        "app": "NDIAYE DIGITAL PRO",
+        "phase": 1,
+        "supabase": check_supabase_connection(),
+    }
 
 
 if __name__ == "__main__":
