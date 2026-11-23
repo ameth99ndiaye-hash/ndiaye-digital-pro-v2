@@ -144,48 +144,10 @@ def index():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    if request.method == "POST":
-        shop = request.form.get("shop_name", "").strip()
-        owner = request.form.get("owner_name", "").strip()
-        email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
-
-        if not all([shop, owner, email, password]) or len(password) < 8:
-            flash("Complète tous les champs. Le mot de passe doit contenir au moins 8 caractères.", "error")
-            return render_template("register.html")
-
-        if supabase_auth_enabled():
-            try:
-                _, user, auth_session = sign_up(email, password, shop, owner)
-                if not user:
-                    flash("Inscription non finalisée. Vérifie ta boîte e-mail si une confirmation est demandée.", "success")
-                    return redirect(url_for("login"))
-                if not auth_session:
-                    flash("Compte créé. Confirme ton adresse e-mail, puis connecte-toi.", "success")
-                    return redirect(url_for("login"))
-                from supabase_client import create_supabase_client
-                client = create_supabase_client(access_token=auth_session.access_token)
-                merchant = merchant_for_user(client, user, auth_session.access_token)
-                save_auth_session(auth_session, merchant, email)
-                return redirect(url_for("dashboard"))
-            except Exception:
-                app.logger.exception("Supabase registration failed")
-                flash("Impossible de créer le compte. Vérifie l'e-mail, le mot de passe et la confirmation e-mail Supabase.", "error")
-                return render_template("register.html")
-
-        try:
-            with db() as con:
-                cur = con.execute(
-                    "INSERT INTO merchants(shop_name, owner_name, email, password_hash) VALUES(?,?,?,?)",
-                    (shop, owner, email, generate_password_hash(password)),
-                )
-                session.clear()
-                session["merchant_id"] = cur.lastrowid
-                session["shop_name"] = shop
-            return redirect(url_for("dashboard"))
-        except sqlite3.IntegrityError:
-            flash("Cette adresse e-mail possède déjà un compte.", "error")
-    return render_template("register.html")
+    # Public self-registration is deliberately disabled.
+    # Only the administrator will be allowed to create merchant accounts.
+    flash("Les inscriptions publiques sont fermées. Contacte l’administrateur pour obtenir un compte.", "error")
+    return redirect(url_for("login"))
 
 
 @app.route("/login", methods=["GET", "POST"])
