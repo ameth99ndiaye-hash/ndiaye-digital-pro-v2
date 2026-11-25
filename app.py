@@ -283,6 +283,41 @@ def login():
     return render_template("login.html")
 
 
+@app.route("/admin/subscriptions", methods=["GET", "POST"])
+@admin_required
+def admin_subscriptions():
+    from supabase_client import create_supabase_admin_client
+    admin_client = create_supabase_admin_client()
+    if request.method == "POST":
+        merchant_id = request.form.get("merchant_id", "").strip()
+        action = request.form.get("action", "").strip()
+        if action not in ("activate", "suspend") or not merchant_id:
+            flash("Action invalide.", "error")
+        else:
+            try:
+                admin_client.rpc("admin_set_merchant_subscription", {
+                    "p_merchant_id": merchant_id,
+                    "p_action": action,
+                }).execute()
+                flash("Abonnement activé pour un mois." if action == "activate" else "Abonnement suspendu.", "success")
+            except Exception:
+                app.logger.exception("Manual subscription action failed")
+                flash("Impossible de modifier cet abonnement. Vérifie le compte puis réessaie.", "error")
+        return redirect(url_for("admin_subscriptions"))
+
+    try:
+        merchants = admin_client.table("merchants").select("id,shop_name").order("shop_name").limit(500).execute().data
+        subscriptions = admin_client.table("subscriptions").select("merchant_id,plan_code,status,current_period_start,current_period_end").execute().data
+        subscription_by_merchant = {row["merchant_id"]: row for row in subscriptions}
+        for merchant in merchants:
+            merchant["subscription"] = subscription_by_merchant.get(merchant["id"])
+    except Exception:
+        app.logger.exception("Could not load merchant subscriptions")
+        merchants = []
+        flash("Impossible de charger les abonnements.", "error")
+    return render_template("admin_subscriptions.html", merchants=merchants)
+
+
 @app.get("/dashboard")
 @login_required
 def dashboard():
