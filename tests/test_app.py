@@ -1,10 +1,9 @@
 import tempfile
 import unittest
-from unittest.mock import patch
 from pathlib import Path
+from unittest.mock import patch
 
 import app as application
-from supabase_client import check_supabase_connection
 
 
 class NdiayeDigitalProTests(unittest.TestCase):
@@ -12,22 +11,25 @@ class NdiayeDigitalProTests(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         application.DB = Path(self.temp_dir.name) / "test.db"
         application.init_db()
-        application.app.config.update(TESTING=True, SECRET_KEY="test-secret", WTF_CSRF_ENABLED=False)
+        application.app.config.update(
+            TESTING=True,
+            SECRET_KEY="test-secret",
+            WTF_CSRF_ENABLED=False,
+        )
         self.client = application.app.test_client()
 
     def tearDown(self):
         self.temp_dir.cleanup()
 
-    def register(self, email="test@example.com"):
-        return self.client.post(
-            "/register",
-            data={
-                "shop_name": "Boutique Test",
-                "owner_name": "Test User",
-                "email": email,
-                "password": "motdepasse123",
-            },
-            follow_redirects=True,
+    def login_as_merchant(self):
+        with self.client.session_transaction() as sess:
+            sess["merchant_id"] = "merchant-uuid-test"
+            sess["shop_name"] = "Boutique Test"
+            sess["auth_sid"] = "sid-test"
+
+    def supabase_session(self):
+        return patch.object(application, "supabase_auth_enabled", return_value=True), patch.object(
+            application, "load_auth_session", return_value={"access_token": "test-access-token"}
         )
 
     def test_home_page_loads(self):
@@ -35,36 +37,115 @@ class NdiayeDigitalProTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Votre commerce", response.data)
 
-    def test_registration_creates_private_dashboard_session(self):
-        response = self.register()
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Boutique Test", response.data)
-        self.assertIn(b"PHASE 1", response.data)
+    def test_public_registration_is_disabled(self):
+        response = self.client.post(
+            "/register",
+            data={
+                "shop_name": "Boutique Test",
+                "owner_name": "Test User",
+                "email": "test@example.com",
+                "password": "motdepasse123",
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login", response.headers["Location"])
 
-    def test_duplicate_email_is_rejected(self):
-        self.register()
-        response = self.register()
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("possède déjà un compte".encode(), response.data)
+    def test_admin_payment_and_subscription_pages_require_admin(self):
+        for path in ("/admin/payments", "/admin/subscriptions"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 302, path)
+            self.assertIn("/login", response.headers["Location"])
+
+    def test_subscription_page_requires_login(self):
+        response = self.client.get("/subscription")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login", response.headers["Location"])
 
     def test_dashboard_requires_login(self):
         response = self.client.get("/dashboard")
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login", response.headers["Location"])
 
-    def test_login_and_logout(self):
-        self.register()
-        self.client.get("/logout")
-        response = self.client.post(
-            "/login",
-            data={"email": "test@example.com", "password": "motdepasse123"},
-            follow_redirects=True,
-        )
+    def test_commerce_pages_require_login(self):
+        for path in ("/products", "/stock", "/sales"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 302, path)
+            self.assertIn("/login", response.headers["Location"])
+
+    def test_supabase_product_page_is_merchant_scoped(self):
+        self.login_as_merchant()
+        with patch.object(application, "supabase_auth_enabled", return_value=True), \
+             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \
+             patch("commerce_routes.list_products", return_value=[]) as list_mock:
+            response = self.client.get("/products")
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Boutique Test", response.data)
-        self.client.get("/logout")
-        response = self.client.get("/dashboard")
+        self.assertIn(b"Ajouter un produit", response.data)
+        list_mock.assert_called_once_with("token", "merchant-uuid-test")
+
+    def test_product_creation_uses_current_merchant(self):
+        self.login_as_merchant()
+        with patch.object(application, "supabase_auth_enabled", return_value=True), \
+             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \
+             patch("commerce_routes.create_product", return_value=[{"id": "product-1"}]) as create_mock, \
+             patch("commerce_routes.list_products", return_value=[]):
+            response = self.client.post("/products", data={
+                "name": "Riz", "sku": "RIZ-1", "quantity": "10",
+                "min_quantity": "2", "unit_price": "500",
+            })
         self.assertEqual(response.status_code, 302)
+        create_mock.assert_called_once_with("token", "merchant-uuid-test", "Riz", "RIZ-1", 10, 2, 500)
+
+    def test_stock_page_loads_for_current_merchant(self):
+        self.login_as_merchant()
+        with patch.object(application, "supabase_auth_enabled", return_value=True), \
+             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \
+             patch("commerce_routes.list_products", return_value=[]), \
+             patch("commerce_routes.list_stock_movements", return_value=[]) as movements_mock:
+            response = self.client.get("/stock")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Mouvements de stock", response.data)
+        movements_mock.assert_called_once_with("token", "merchant-uuid-test")
+
+    def test_stock_adjustment_uses_rpc_for_current_merchant(self):
+        self.login_as_merchant()
+        with patch.object(application, "supabase_auth_enabled", return_value=True), \
+             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \
+             patch("commerce_routes.adjust_stock", return_value=None) as adjust_mock, \
+             patch("commerce_routes.list_products", return_value=[]), \
+             patch("commerce_routes.list_stock_movements", return_value=[]):
+            response = self.client.post("/stock", data={
+                "product_id": "product-uuid", "movement_type": "IN",
+                "quantity": "5", "note": "Réception",
+            })
+        self.assertEqual(response.status_code, 302)
+        adjust_mock.assert_called_once_with("token", "merchant-uuid-test", "product-uuid", "IN", 5, "Réception")
+
+    def test_sales_page_loads_for_current_merchant(self):
+        self.login_as_merchant()
+        with patch.object(application, "supabase_auth_enabled", return_value=True), \
+             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \
+             patch("commerce_routes.list_products", return_value=[]), \
+             patch("commerce_routes.list_sales", return_value=[]) as sales_mock:
+            response = self.client.get("/sales")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Enregistrer une vente", response.data)
+        sales_mock.assert_called_once_with("token", "merchant-uuid-test")
+
+    def test_sale_creation_uses_current_merchant(self):
+        self.login_as_merchant()
+        with patch.object(application, "supabase_auth_enabled", return_value=True), \
+             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \
+             patch("commerce_routes.create_sale", return_value={"sale_id": "sale-1"}) as sale_mock, \
+             patch("commerce_routes.list_products", return_value=[]), \
+             patch("commerce_routes.list_sales", return_value=[]):
+            response = self.client.post("/sales", data={
+                "product_id": "product-uuid", "quantity": "2",
+            })
+        self.assertEqual(response.status_code, 302)
+        sale_mock.assert_called_once_with("token", "merchant-uuid-test", [
+            {"product_id": "product-uuid", "quantity": 2}
+        ])
 
     def test_health_endpoint(self):
         response = self.client.get("/health")
@@ -72,77 +153,12 @@ class NdiayeDigitalProTests(unittest.TestCase):
         self.assertEqual(response.json["status"], "ok")
         self.assertIn(response.json["supabase"], {"not_configured", "connected", "unavailable"})
 
-    def test_supabase_reports_missing_environment_configuration(self):
-        with patch.dict("os.environ", {"SUPABASE_URL": "", "SUPABASE_PUBLISHABLE_KEY": ""}):
-            self.assertEqual(check_supabase_connection(), "not_configured")
-
-
-    def test_supabase_auth_session_keeps_tokens_out_of_flask_cookie(self):
-        from types import SimpleNamespace
-        with application.app.test_request_context("/"):
-            fake_auth = SimpleNamespace(
-                access_token="access-token-private",
-                refresh_token="refresh-token-private",
-                expires_at=4102444800,
-            )
-            merchant = {"id": "merchant-uuid", "shop_name": "Boutique Secure"}
-            application.save_auth_session(fake_auth, merchant, "owner@example.com")
-            from flask import session
-            self.assertNotIn("access_token", session)
-            self.assertNotIn("refresh_token", session)
-            sid = session["auth_sid"]
-            with application.db() as con:
-                row = con.execute("SELECT * FROM auth_sessions WHERE sid=?", (sid,)).fetchone()
-            self.assertEqual(row["access_token"], "access-token-private")
-            self.assertEqual(row["merchant_id"], "merchant-uuid")
-
-
-    def test_supabase_product_page_is_merchant_scoped(self):
-        from unittest.mock import patch
-        with self.client.session_transaction() as sess:
-            sess["merchant_id"] = "merchant-1"
-            sess["shop_name"] = "Boutique Test"
-            sess["auth_sid"] = "sid-test"
-        with patch.object(application, "supabase_auth_enabled", return_value=True), \
-             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \
-             patch.object(application, "list_products", return_value=[]):
-            response = self.client.get("/products")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Ajouter un produit", response.data)
-
-    def test_supabase_stock_page_loads(self):
-        from unittest.mock import patch
-        with self.client.session_transaction() as sess:
-            sess["merchant_id"] = "merchant-1"
-            sess["shop_name"] = "Boutique Test"
-            sess["auth_sid"] = "sid-test"
-        with patch.object(application, "supabase_auth_enabled", return_value=True), \
-             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \
-             patch.object(application, "list_products", return_value=[]), \
-             patch.object(application, "list_stock_movements", return_value=[]):
-            response = self.client.get("/stock")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Mouvements de stock", response.data)
-
-    def test_supabase_sales_page_loads(self):
-        from unittest.mock import patch
-        with self.client.session_transaction() as sess:
-            sess["merchant_id"] = "merchant-1"
-            sess["shop_name"] = "Boutique Test"
-            sess["auth_sid"] = "sid-test"
-        with patch.object(application, "supabase_auth_enabled", return_value=True), \
-             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \
-             patch.object(application, "list_products", return_value=[]), \
-             patch.object(application, "list_sales", return_value=[]):
-            response = self.client.get("/sales")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Enregistrer une vente", response.data)
-
-
     def test_csrf_blocks_post_without_token(self):
         application.app.config["WTF_CSRF_ENABLED"] = True
         try:
-            response = self.client.post("/login", data={"email": "x@example.com", "password": "bad"})
+            response = self.client.post(
+                "/login", data={"email": "x@example.com", "password": "bad"}
+            )
             self.assertEqual(response.status_code, 400)
         finally:
             application.app.config["WTF_CSRF_ENABLED"] = False

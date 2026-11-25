@@ -207,6 +207,49 @@ def admin():
                 flash("La création a échoué. Vérifie la configuration Supabase et que cette adresse n’existe pas déjà.", "error")
     return render_template("admin.html", secret_ready=secret_ready, temporary_credentials=temporary_credentials)
 
+@app.route("/admin/payments", methods=["GET", "POST"])
+@admin_required
+def admin_payments():
+    from supabase_client import create_supabase_admin_client
+    admin_client = create_supabase_admin_client()
+    if request.method == "POST":
+        submission_id = request.form.get("submission_id", "").strip()
+        decision = request.form.get("decision", "").strip()
+        note = request.form.get("admin_note", "").strip()[:500]
+        if decision not in ("confirmed", "rejected") or not submission_id:
+            flash("Action invalide.", "error")
+        else:
+            try:
+                admin_client.rpc("admin_review_payment_submission", {
+                    "p_submission_id": submission_id,
+                    "p_decision": decision,
+                    "p_admin_note": note or None,
+                }).execute()
+                flash("Paiement confirmé et abonnement activé." if decision == "confirmed" else "Demande de paiement refusée.", "success")
+            except Exception:
+                app.logger.exception("Manual payment review failed")
+                flash("Impossible de traiter cette demande. Vérifie son statut puis réessaie.", "error")
+        return redirect(url_for("admin_payments"))
+
+    try:
+        submissions = (admin_client.table("payment_submissions")
+            .select("id,merchant_id,plan_code,provider,amount_xof,payer_phone,transaction_reference,status,submitted_at,admin_note")
+            .order("submitted_at", desc=True).limit(100).execute().data)
+        merchant_ids = list({row["merchant_id"] for row in submissions})
+        merchant_names = {}
+        if merchant_ids:
+            merchants = (admin_client.table("merchants").select("id,shop_name")
+                .in_("id", merchant_ids).execute().data)
+            merchant_names = {row["id"]: row["shop_name"] for row in merchants}
+        for row in submissions:
+            row["shop_name"] = merchant_names.get(row["merchant_id"], "Boutique")
+    except Exception:
+        app.logger.exception("Could not load payment submissions")
+        submissions = []
+        flash("Impossible de charger les demandes de paiement.", "error")
+    return render_template("admin_payments.html", submissions=submissions)
+
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -239,6 +282,76 @@ def login():
         flash("Identifiants incorrects.", "error")
     return render_template("login.html")
 
+
+@app.route("/admin/subscriptions", methods=["GET", "POST"])
+@admin_required
+def admin_subscriptions():
+    from supabase_client import create_supabase_admin_client
+    admin_client = create_supabase_admin_client()
+    if request.method == "POST":
+        merchant_id = request.form.get("merchant_id", "").strip()
+        action = request.form.get("action", "").strip()
+        if action not in ("activate", "suspend") or not merchant_id:
+            flash("Action invalide.", "error")
+        else:
+            try:
+                admin_client.rpc("admin_set_merchant_subscription", {
+                    "p_merchant_id": merchant_id,
+                    "p_action": action,
+                }).execute()
+                flash("Abonnement activé pour un mois." if action == "activate" else "Abonnement suspendu.", "success")
+            except Exception:
+                app.logger.exception("Manual subscription action failed")
+                flash("Impossible de modifier cet abonnement. Vérifie le compte puis réessaie.", "error")
+        return redirect(url_for("admin_subscriptions"))
+
+    try:
+        merchants = admin_client.table("merchants").select("id,shop_name").order("shop_name").limit(500).execute().data
+        subscriptions = admin_client.table("subscriptions").select("merchant_id,plan_code,status,current_period_start,current_period_end").execute().data
+        subscription_by_merchant = {row["merchant_id"]: row for row in subscriptions}
+        for merchant in merchants:
+            merchant["subscription"] = subscription_by_merchant.get(merchant["id"])
+    except Exception:
+        app.logger.exception("Could not load merchant subscriptions")
+        merchants = []
+        flash("Impossible de charger les abonnements.", "error")
+    return render_template("admin_subscriptions.html", merchants=merchants)
+
+
+@app.route("/subscription", methods=["GET", "POST"])
+@login_required
+def subscription():
+    from supabase_client import create_supabase_client
+    client = create_supabase_client(access_token=g.auth_record["access_token"])
+    merchant_id = session["merchant_id"]
+    if request.method == "POST":
+        provider = request.form.get("provider", "").strip()
+        reference = request.form.get("transaction_reference", "").strip()[:120]
+        payer_phone = request.form.get("payer_phone", "").strip()[:30]
+        if provider not in ("wave", "orange_money") or not reference:
+            flash("Choisis le moyen de paiement et saisis la référence de transaction.", "error")
+        else:
+            try:
+                client.table("payment_submissions").insert({
+                    "merchant_id": merchant_id, "plan_code": "mensuel",
+                    "provider": provider, "amount_xof": 2000,
+                    "payer_phone": payer_phone or None,
+                    "transaction_reference": reference, "status": "pending",
+                }).execute()
+                flash("Demande envoyée. Activation après vérification manuelle.", "success")
+                return redirect(url_for("subscription"))
+            except Exception:
+                app.logger.exception("Subscription payment submission failed")
+                flash("Demande non enregistrée. Vérifie la référence puis réessaie.", "error")
+    try:
+        submissions = (client.table("payment_submissions").select("provider,amount_xof,transaction_reference,status,submitted_at").eq("merchant_id", merchant_id).order("submitted_at", desc=True).limit(20).execute().data)
+        subscriptions = client.table("subscriptions").select("plan_code,status,current_period_end").eq("merchant_id", merchant_id).limit(1).execute().data
+        current_subscription = subscriptions[0] if subscriptions else None
+    except Exception:
+        app.logger.exception("Could not load merchant subscription")
+        submissions, current_subscription = [], None
+        flash("Impossible de charger les informations d’abonnement.", "error")
+    return render_template("subscription.html", submissions=submissions, current_subscription=current_subscription)
 
 @app.get("/dashboard")
 @login_required
@@ -276,6 +389,11 @@ def health():
         "auth_mode": "supabase" if supabase_auth_enabled() else "local_sqlite",
         "supabase": check_supabase_connection(),
     }
+
+
+# Phase 3 commerce pages: all queries use the signed-in merchant's Supabase token.
+from commerce_routes import register_commerce_routes
+register_commerce_routes(app, login_required)
 
 
 if __name__ == "__main__":

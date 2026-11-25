@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Abonnements · Administration · NDIAYE DIGITAL PRO{% endblock %}
+{% block content %}
+<div class="dash-head"><div><div class="eyebrow">ADMINISTRATION</div><h1>Abonnements commerçants</h1><p class="muted">Gestion manuelle réservée à l’administrateur.</p></div><a class="btn ghost" href="{{ url_for('admin_panel') }}">Retour administration</a></div>
+<section class="panel"><h2>Tarif : 2 000 FCFA / mois</h2><p>Active uniquement après vérification manuelle du paiement. Une activation ajoute un mois à la date de fin actuelle si l’abonnement est encore valide.</p></section>
+<section class="panel"><h2>Commerces</h2>
+{% if merchants %}<div class="table-wrap"><table><thead><tr><th>Boutique</th><th>Statut</th><th>Fin de période</th><th>Action</th></tr></thead><tbody>
+{% for m in merchants %}<tr><td>{{ m.shop_name }}</td><td>{% if m.subscription %}{{ m.subscription.status }}{% else %}Non abonné{% endif %}</td><td>{% if m.subscription and m.subscription.current_period_end %}{{ m.subscription.current_period_end }}{% else %}—{% endif %}</td><td><form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="merchant_id" value="{{ m.id }}"><button class="btn gold" name="action" value="activate">Activer / prolonger 1 mois</button>{% if m.subscription and m.subscription.status == "active" %}<button class="btn ghost" name="action" value="suspend">Suspendre</button>{% endif %}</form></td></tr>{% endfor %}
+</tbody></table></div>{% else %}<p class="muted">Aucun commerce enregistré.</p>{% endif %}
+</section>{% endblock %}
