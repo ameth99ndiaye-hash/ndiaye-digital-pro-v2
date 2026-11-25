@@ -318,6 +318,41 @@ def admin_subscriptions():
     return render_template("admin_subscriptions.html", merchants=merchants)
 
 
+@app.route("/subscription", methods=["GET", "POST"])
+@login_required
+def subscription():
+    from supabase_client import create_supabase_client
+    client = create_supabase_client(access_token=g.auth_record["access_token"])
+    merchant_id = session["merchant_id"]
+    if request.method == "POST":
+        provider = request.form.get("provider", "").strip()
+        reference = request.form.get("transaction_reference", "").strip()[:120]
+        payer_phone = request.form.get("payer_phone", "").strip()[:30]
+        if provider not in ("wave", "orange_money") or not reference:
+            flash("Choisis le moyen de paiement et saisis la référence de transaction.", "error")
+        else:
+            try:
+                client.table("payment_submissions").insert({
+                    "merchant_id": merchant_id, "plan_code": "mensuel",
+                    "provider": provider, "amount_xof": 2000,
+                    "payer_phone": payer_phone or None,
+                    "transaction_reference": reference, "status": "pending",
+                }).execute()
+                flash("Demande envoyée. Activation après vérification manuelle.", "success")
+                return redirect(url_for("subscription"))
+            except Exception:
+                app.logger.exception("Subscription payment submission failed")
+                flash("Demande non enregistrée. Vérifie la référence puis réessaie.", "error")
+    try:
+        submissions = (client.table("payment_submissions").select("provider,amount_xof,transaction_reference,status,submitted_at").eq("merchant_id", merchant_id).order("submitted_at", desc=True).limit(20).execute().data)
+        subscriptions = client.table("subscriptions").select("plan_code,status,current_period_end").eq("merchant_id", merchant_id).limit(1).execute().data
+        current_subscription = subscriptions[0] if subscriptions else None
+    except Exception:
+        app.logger.exception("Could not load merchant subscription")
+        submissions, current_subscription = [], None
+        flash("Impossible de charger les informations d’abonnement.", "error")
+    return render_template("subscription.html", submissions=submissions, current_subscription=current_subscription)
+
 @app.get("/dashboard")
 @login_required
 def dashboard():
