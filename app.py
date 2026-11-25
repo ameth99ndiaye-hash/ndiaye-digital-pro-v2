@@ -207,6 +207,49 @@ def admin():
                 flash("La création a échoué. Vérifie la configuration Supabase et que cette adresse n’existe pas déjà.", "error")
     return render_template("admin.html", secret_ready=secret_ready, temporary_credentials=temporary_credentials)
 
+@app.route("/admin/payments", methods=["GET", "POST"])
+@admin_required
+def admin_payments():
+    from supabase_client import create_supabase_admin_client
+    admin_client = create_supabase_admin_client()
+    if request.method == "POST":
+        submission_id = request.form.get("submission_id", "").strip()
+        decision = request.form.get("decision", "").strip()
+        note = request.form.get("admin_note", "").strip()[:500]
+        if decision not in ("confirmed", "rejected") or not submission_id:
+            flash("Action invalide.", "error")
+        else:
+            try:
+                admin_client.rpc("admin_review_payment_submission", {
+                    "p_submission_id": submission_id,
+                    "p_decision": decision,
+                    "p_admin_note": note or None,
+                }).execute()
+                flash("Paiement confirmé et abonnement activé." if decision == "confirmed" else "Demande de paiement refusée.", "success")
+            except Exception:
+                app.logger.exception("Manual payment review failed")
+                flash("Impossible de traiter cette demande. Vérifie son statut puis réessaie.", "error")
+        return redirect(url_for("admin_payments"))
+
+    try:
+        submissions = (admin_client.table("payment_submissions")
+            .select("id,merchant_id,plan_code,provider,amount_xof,payer_phone,transaction_reference,status,submitted_at,admin_note")
+            .order("submitted_at", desc=True).limit(100).execute().data)
+        merchant_ids = list({row["merchant_id"] for row in submissions})
+        merchant_names = {}
+        if merchant_ids:
+            merchants = (admin_client.table("merchants").select("id,shop_name")
+                .in_("id", merchant_ids).execute().data)
+            merchant_names = {row["id"]: row["shop_name"] for row in merchants}
+        for row in submissions:
+            row["shop_name"] = merchant_names.get(row["merchant_id"], "Boutique")
+    except Exception:
+        app.logger.exception("Could not load payment submissions")
+        submissions = []
+        flash("Impossible de charger les demandes de paiement.", "error")
+    return render_template("admin_payments.html", submissions=submissions)
+
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
