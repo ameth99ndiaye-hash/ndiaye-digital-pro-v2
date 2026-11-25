@@ -51,6 +51,12 @@ class NdiayeDigitalProTests(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login", response.headers["Location"])
 
+    def test_admin_payment_and_subscription_pages_require_admin(self):
+        for path in ("/admin/payments", "/admin/subscriptions"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 302, path)
+            self.assertIn("/login", response.headers["Location"])
+
     def test_dashboard_requires_login(self):
         response = self.client.get("/dashboard")
         self.assertEqual(response.status_code, 302)
