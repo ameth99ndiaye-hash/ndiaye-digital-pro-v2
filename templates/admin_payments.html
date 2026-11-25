@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Paiements · Administration · NDIAYE DIGITAL PRO{% endblock %}
+{% block content %}
+<div class="dash-head"><div><div class="eyebrow">ADMINISTRATION</div><h1>Demandes de paiement</h1><p class="muted">Vérifie manuellement chaque transaction Wave ou Orange Money avant activation.</p></div><a class="btn ghost" href="{{ url_for('admin_panel') }}">Retour administration</a></div>
+<section class="panel"><h2>Abonnement mensuel · 2 000 FCFA</h2><p>Confirmer active ou prolonge l’abonnement d’un mois. Refuser ne modifie pas l’abonnement existant.</p></section>
+<section class="panel"><h2>Historique des demandes</h2>
+{% if submissions %}<div class="table-wrap"><table><thead><tr><th>Boutique</th><th>Paiement</th><th>Référence</th><th>Statut</th><th>Action</th></tr></thead><tbody>
+{% for p in submissions %}<tr><td>{{ p.shop_name }}<br><small>{{ p.submitted_at }}</small></td><td>{{ "Wave" if p.provider == "wave" else "Orange Money" }}<br>{{ p.amount_xof }} FCFA{% if p.payer_phone %}<br>{{ p.payer_phone }}{% endif %}</td><td>{{ p.transaction_reference }}</td><td>{{ p.status }}</td><td>
+{% if p.status == "pending" %}<form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="submission_id" value="{{ p.id }}"><label>Note admin (facultatif)<input name="admin_note" maxlength="500"></label><button class="btn gold" name="decision" value="confirmed">Confirmer + activer</button><button class="btn ghost" name="decision" value="rejected">Refuser</button></form>{% else %}{{ p.admin_note or "—" }}{% endif %}
+</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">Aucune demande de paiement enregistrée.</p>{% endif %}
+</section>{% endblock %}
