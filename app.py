@@ -278,6 +278,11 @@ def health():
     }
 
 
+# Phase 3 commerce pages: all queries use the signed-in merchant's Supabase token.
+from commerce_routes import register_commerce_routes
+register_commerce_routes(app, login_required)
+
+
 if __name__ == "__main__":
     debug = os.getenv("FLASK_DEBUG", "0") == "1"
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=debug)
