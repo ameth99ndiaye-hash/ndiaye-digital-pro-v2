@@ -123,10 +123,14 @@ def login_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if "merchant_id" not in session:
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "authentication_required"}), 401
             return redirect(url_for("login"))
         if supabase_auth_enabled():
             g.auth_record = load_auth_session()
             if not g.auth_record:
+                if request.path.startswith("/api/"):
+                    return jsonify({"error": "authentication_required"}), 401
                 return redirect(url_for("login"))
         return fn(*args, **kwargs)
     return wrapper
