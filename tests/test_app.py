@@ -54,7 +54,8 @@ class NdiayeDigitalProTests(unittest.TestCase):
     def test_admin_payment_and_subscription_pages_require_admin(self):
         for path in ("/admin/payments", "/admin/subscriptions"):
             response = self.client.get(path)
-            self.assertEqual(response.status_code, 401, path)
+            self.assertEqual(response.status_code, 302, path)
+            self.assertIn("/login", response.headers["Location"])
 
     def test_subscription_page_requires_login(self):
         response = self.client.get("/subscription")
@@ -69,7 +70,8 @@ class NdiayeDigitalProTests(unittest.TestCase):
     def test_commerce_pages_require_login(self):
         for path in ("/products", "/stock", "/sales"):
             response = self.client.get(path)
-            self.assertEqual(response.status_code, 401, path)
+            self.assertEqual(response.status_code, 302, path)
+            self.assertIn("/login", response.headers["Location"])
 
     def test_supabase_product_page_is_merchant_scoped(self):
         self.login_as_merchant()
