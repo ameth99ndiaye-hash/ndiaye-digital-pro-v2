@@ -1,4 +1,4 @@
-const CACHE_NAME = "ndiaye-digital-pro-shell-v2";
+const CACHE_NAME = "ndiaye-digital-pro-shell-v3";
 const SHELL = [
   "/static/style.css",
   "/static/app.js",
