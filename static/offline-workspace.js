@@ -98,6 +98,7 @@
     };
     const products=$("productsTable");products.replaceChildren(table(["Produit","Stock","Seuil","Prix FCFA"],view.products.map(p=>[p.name,p.quantity,p.min_quantity,p.unit_price])));
     const movements=$("movementsTable");movements.replaceChildren(table(["Date","Produit","Type","Qté"],view.movements.slice(0,15).map(m=>[m.created_at,m.products?.name||view.products.find(p=>p.id===m.product_id)?.name||"Produit",m.movement_type,m.quantity])));
+    const sales=$("salesTable");sales.replaceChildren(table(["Date","Montant","Statut"],view.sales.slice(0,15).map(s=>[s.created_at,s.total+" "+(s.currency||"XOF"),s.status])));
     $("syncButton").disabled=!navigator.onLine||!pendingCount();
   }
   function addOperation(type,payload) {
@@ -139,7 +140,7 @@
     addOperation("sale_create",p);e.currentTarget.reset();render();
   });
   async function syncQueue() {
-    if(!vault||!navigator.onLine||!vault.queue.length)return;
+    if(!vault||!navigator.onLine)return;
     try {
       const bootstrap=await fetch("/api/offline-bootstrap",{credentials:"same-origin",cache:"no-store"});
       if(!bootstrap.ok) throw new Error("Reconnecte-toi à l’application pour synchroniser.");
