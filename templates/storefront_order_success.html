@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Demande envoyée · NDIAYE DIGITAL PRO{% endblock %}
+{% block content %}
+<section class="form-card">
+  <div class="eyebrow">DEMANDE ENREGISTRÉE</div>
+  <h1>Merci !</h1>
+  <p class="muted">Votre demande a été transmise à l'administrateur de NDIAYE DIGITAL PRO. Vous serez contacté pour la démonstration ou pour confirmer les conditions et les coordonnées officielles de paiement.</p>
+  <p class="notice">Aucun paiement n'a été prélevé et aucune licence n'a été activée automatiquement.</p>
+  <a class="btn gold full" href="{{ url_for('index') }}">Retour à l'accueil</a>
+</section>
+{% endblock %}
