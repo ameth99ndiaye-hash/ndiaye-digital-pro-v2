@@ -6,8 +6,6 @@
   let activePin = null;
   let saveChain = Promise.resolve();
   let csrfToken = null;
-  let activePin = null;
-  let saveChain = Promise.resolve();
   const $ = (id) => document.getElementById(id);
 
   function openDb() {
@@ -53,7 +51,7 @@
     return JSON.parse(new TextDecoder().decode(plain));
   }
   function save() {
-    saveChain = saveChain.then(async () => {
+    saveChain = saveChain.catch(() => {}).then(async () => {
       if (!activePin || !vault) throw new Error("Espace hors ligne verrouillé.");
       const encrypted = await encryptData(vault, activePin);
       await writeVault(encrypted);
