@@ -3,7 +3,8 @@
   const DB_NAME = "ndiaye-digital-pro-offline";
   const STORE = "vault";
   let vault = null;
-  let key = null;
+  let activePin = null;
+  let saveChain = Promise.resolve();
   let csrfToken = null;
   let activePin = null;
   let saveChain = Promise.resolve();
@@ -114,19 +115,19 @@
   }
   $("unlockButton").addEventListener("click",async()=>{
     const pin=$("pin").value;
-    if(pin.length<6){$("unlockMessage").textContent="Le code doit contenir au moins 6 caractères.";return;}
+    if(pin.length<8){$("unlockMessage").textContent="Le code doit contenir au moins 8 caractères.";return;}
     try {
       const record=await readVault();
       if(!record) throw new Error("Aucune sauvegarde hors ligne trouvée. Connecte-toi à Internet et prépare d’abord le mode hors ligne.");
       vault=await decryptData(record,pin);
-      key=pin;activePin=pin;
+      activePin=pin;
       $("unlock").hidden=true;$("workspace").hidden=false;
       csrfToken=null;
       render();
       if(navigator.onLine) await syncQueue();
     } catch(e) { $("unlockMessage").textContent=e.message.includes("Aucune sauvegarde")?e.message:"Code incorrect ou données locales illisibles."; }
   });
-  $("lockButton").addEventListener("click",()=>{vault=null;key=null;activePin=null;$("workspace").hidden=true;$("unlock").hidden=false;$("pin").value="";});
+  $("lockButton").addEventListener("click",()=>{vault=null;activePin=null;$("workspace").hidden=true;$("unlock").hidden=false;$("pin").value="";});
   $("productForm").addEventListener("submit",async e=>{
     e.preventDefault();const f=new FormData(e.currentTarget);
     const p={product_id:crypto.randomUUID(),name:String(f.get("name")).trim(),sku:String(f.get("sku")||""),quantity:Number(f.get("quantity")),min_quantity:Number(f.get("min_quantity")),unit_price:Number(f.get("unit_price"))};
