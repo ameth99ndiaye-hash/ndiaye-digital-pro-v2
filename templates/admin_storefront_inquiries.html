@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Demandes clients · Administration{% endblock %}
+{% block content %}
+<div class="dash-head"><div><div class="eyebrow">ESPACE ADMINISTRATEUR</div><h1>Demandes clients</h1><p class="muted">Démonstrations, licences et demandes de devis reçues depuis la boutique.</p></div><a class="btn ghost" href="{{ url_for('admin_panel') }}">Administration</a></div>
+<section class="panel">
+{% if inquiries %}
+<div class="table-wrap"><table><thead><tr><th>Client / commerce</th><th>Contact</th><th>Formule</th><th>Message</th><th>Statut</th></tr></thead><tbody>
+{% for item in inquiries %}
+<tr>
+<td><strong>{{ item.contact_name }}</strong><br>{{ item.shop_name }}<br><small>{{ item.country }} · {{ item.created_at }}</small></td>
+<td>{{ item.phone }}<br>{{ item.email or "Pas d'e-mail" }}</td>
+<td>{{ {"demo":"Démo gratuite","monthly":"Mensuelle · 2 000 FCFA","annual":"Annuelle · 20 000 FCFA","lifetime":"À vie · 50 000 FCFA"}.get(item.plan_code, item.plan_code) }}</td>
+<td>{{ item.message or "—" }}</td>
+<td><form method="post">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<input type="hidden" name="inquiry_id" value="{{ item.id }}">
+<select name="status">
+<option value="new" {% if item.status == "new" %}selected{% endif %}>Nouvelle</option>
+<option value="contacted" {% if item.status == "contacted" %}selected{% endif %}>Contacté</option>
+<option value="converted" {% if item.status == "converted" %}selected{% endif %}>Client gagné</option>
+<option value="closed" {% if item.status == "closed" %}selected{% endif %}>Clôturée</option>
+</select><button class="btn gold" type="submit">Enregistrer</button>
+</form></td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}<p class="muted">Aucune demande pour le moment.</p>{% endif %}
+</section>
+{% endblock %}

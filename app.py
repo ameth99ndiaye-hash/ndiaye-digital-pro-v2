@@ -273,6 +273,72 @@ def admin_payments():
 
 
 
+@app.route("/commande", methods=["GET", "POST"])
+def storefront_order():
+    if request.method == "POST":
+        if request.form.get("website", "").strip():
+            return redirect(url_for("index"))
+        contact_name = request.form.get("contact_name", "").strip()[:120]
+        shop_name = request.form.get("shop_name", "").strip()[:120]
+        email = request.form.get("email", "").strip().lower()[:254] or None
+        phone = request.form.get("phone", "").strip()[:40]
+        country = request.form.get("country", "").strip()[:80]
+        plan_code = request.form.get("plan_code", "").strip()
+        message = request.form.get("message", "").strip()[:1000] or None
+        if (len(contact_name) < 2 or len(shop_name) < 2 or len(phone) < 6
+                or len(country) < 2 or plan_code not in ("demo", "monthly", "annual", "lifetime")):
+            flash("Vérifie les champs obligatoires et la formule choisie.", "error")
+            return render_template("storefront_order.html")
+        if not os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip():
+            flash("Le formulaire est temporairement indisponible. Réessaie plus tard.", "error")
+            return render_template("storefront_order.html"), 503
+        try:
+            from supabase_client import create_supabase_admin_client
+            admin_client = create_supabase_admin_client()
+            admin_client.table("storefront_inquiries").insert({
+                "contact_name": contact_name, "shop_name": shop_name,
+                "email": email, "phone": phone, "country": country,
+                "plan_code": plan_code, "message": message,
+            }).execute()
+            return render_template("storefront_order_success.html")
+        except Exception:
+            app.logger.exception("Storefront inquiry submission failed")
+            flash("La demande n'a pas pu être enregistrée. Réessaie plus tard.", "error")
+            return render_template("storefront_order.html"), 503
+    return render_template("storefront_order.html")
+
+
+@app.route("/admin/demandes", methods=["GET", "POST"])
+@admin_required
+def admin_storefront_inquiries():
+    from supabase_client import create_supabase_admin_client
+    admin_client = create_supabase_admin_client()
+    if request.method == "POST":
+        inquiry_id = request.form.get("inquiry_id", "").strip()
+        new_status = request.form.get("status", "").strip()
+        if not inquiry_id or new_status not in ("new", "contacted", "converted", "closed"):
+            flash("Modification invalide.", "error")
+        else:
+            try:
+                admin_client.table("storefront_inquiries").update({
+                    "status": new_status,
+                }).eq("id", inquiry_id).execute()
+                flash("Statut de la demande mis à jour.", "success")
+            except Exception:
+                app.logger.exception("Could not update storefront inquiry")
+                flash("Impossible de modifier cette demande.", "error")
+        return redirect(url_for("admin_storefront_inquiries"))
+    try:
+        inquiries = (admin_client.table("storefront_inquiries")
+            .select("id,contact_name,shop_name,email,phone,country,plan_code,message,status,created_at")
+            .order("created_at", desc=True).limit(200).execute().data)
+    except Exception:
+        app.logger.exception("Could not load storefront inquiries")
+        inquiries = []
+        flash("Impossible de charger les demandes.", "error")
+    return render_template("admin_storefront_inquiries.html", inquiries=inquiries)
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
