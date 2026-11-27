@@ -153,6 +153,16 @@ class NdiayeDigitalProTests(unittest.TestCase):
         self.assertEqual(response.json["status"], "ok")
         self.assertIn(response.json["supabase"], {"not_configured", "connected", "unavailable"})
 
+    def test_offline_fallback_page_loads(self):
+        response = self.client.get("/offline")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("MODE HORS CONNEXION".encode(), response.data)
+
+    def test_pwa_manifest_is_available(self):
+        response = self.client.get("/static/manifest.webmanifest")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'"display": "standalone"', response.data)
+
     def test_csrf_blocks_post_without_token(self):
         application.app.config["WTF_CSRF_ENABLED"] = True
         try:
