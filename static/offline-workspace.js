@@ -5,6 +5,8 @@
   let vault = null;
   let key = null;
   let csrfToken = null;
+  let activePin = null;
+  let saveChain = Promise.resolve();
   const $ = (id) => document.getElementById(id);
 
   function openDb() {
@@ -49,9 +51,13 @@
     const plain = await crypto.subtle.decrypt({name:"AES-GCM",iv},derived,cipher);
     return JSON.parse(new TextDecoder().decode(plain));
   }
-  async function save() {
-    const encrypted = await encryptData(vault, $("pin").value);
-    await writeVault(encrypted);
+  function save() {
+    saveChain = saveChain.then(async () => {
+      if (!activePin || !vault) throw new Error("Espace hors ligne verrouillé.");
+      const encrypted = await encryptData(vault, activePin);
+      await writeVault(encrypted);
+    });
+    return saveChain;
   }
   function setMessage(message) { $("queueStatus").textContent = message; }
   function pendingCount() { return vault.queue.length; }
@@ -113,14 +119,14 @@
       const record=await readVault();
       if(!record) throw new Error("Aucune sauvegarde hors ligne trouvée. Connecte-toi à Internet et prépare d’abord le mode hors ligne.");
       vault=await decryptData(record,pin);
-      key=pin;
+      key=pin;activePin=pin;
       $("unlock").hidden=true;$("workspace").hidden=false;
       csrfToken=null;
       render();
       if(navigator.onLine) await syncQueue();
     } catch(e) { $("unlockMessage").textContent=e.message.includes("Aucune sauvegarde")?e.message:"Code incorrect ou données locales illisibles."; }
   });
-  $("lockButton").addEventListener("click",()=>{vault=null;key=null;$("workspace").hidden=true;$("unlock").hidden=false;$("pin").value="";});
+  $("lockButton").addEventListener("click",()=>{vault=null;key=null;activePin=null;$("workspace").hidden=true;$("unlock").hidden=false;$("pin").value="";});
   $("productForm").addEventListener("submit",async e=>{
     e.preventDefault();const f=new FormData(e.currentTarget);
     const p={product_id:crypto.randomUUID(),name:String(f.get("name")).trim(),sku:String(f.get("sku")||""),quantity:Number(f.get("quantity")),min_quantity:Number(f.get("min_quantity")),unit_price:Number(f.get("unit_price"))};
