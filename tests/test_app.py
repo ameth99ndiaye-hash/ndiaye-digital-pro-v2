@@ -174,6 +174,46 @@ class NdiayeDigitalProTests(unittest.TestCase):
             self.assertEqual(response.status_code, 302, path)
             self.assertIn("/login", response.headers["Location"])
 
+    def test_offline_bootstrap_returns_current_merchant_snapshot(self):
+        self.login_as_merchant()
+        with patch.object(application, "supabase_auth_enabled", return_value=True), \\
+             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \\
+             patch.object(application, "list_products", return_value=[{"id": "p1"}]), \\
+             patch.object(application, "list_stock_movements", return_value=[]), \\
+             patch.object(application, "list_sales", return_value=[]):
+            response = self.client.get("/api/offline-bootstrap")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["merchant_id"], "merchant-uuid-test")
+        self.assertEqual(response.json["products"], [{"id": "p1"}])
+        self.assertTrue(response.json["csrf_token"])
+
+    def test_offline_sync_uses_current_merchant_token_and_rpc(self):
+        from types import SimpleNamespace
+        self.login_as_merchant()
+        class FakeRpc:
+            def execute(self):
+                return SimpleNamespace(data={"duplicate": False, "type": "product_create"})
+        class FakeClient:
+            def __init__(self):
+                self.call = None
+            def rpc(self, name, params):
+                self.call = (name, params)
+                return FakeRpc()
+        fake = FakeClient()
+        operation = {
+            "operation_id": "11111111-1111-4111-8111-111111111111",
+            "type": "product_create",
+            "payload": {"product_id": "22222222-2222-4222-8222-222222222222", "name": "Riz", "sku": "", "quantity": 2, "min_quantity": 0, "unit_price": 500},
+        }
+        with patch.object(application, "supabase_auth_enabled", return_value=True), \\
+             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \\
+             patch("supabase_client.create_supabase_client", return_value=fake):
+            response = self.client.post("/api/offline-sync", json={"operations": [operation]})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json["results"][0]["ok"])
+        self.assertEqual(fake.call[0], "sync_offline_operation")
+        self.assertEqual(fake.call[1]["p_merchant_id"], "merchant-uuid-test")
+
     def test_csrf_blocks_post_without_token(self):
         application.app.config["WTF_CSRF_ENABLED"] = True
         try:
