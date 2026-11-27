@@ -143,6 +143,11 @@ def service_worker():
     return response
 
 
+@app.get("/offline-workspace")
+def offline_workspace():
+    return app.send_static_file("offline-workspace.html")
+
+
 @app.get("/offline")
 def offline_page():
     return app.send_static_file("offline.html")
