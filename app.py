@@ -135,6 +135,19 @@ def login_required(fn):
 init_db()
 
 
+@app.get("/sw.js")
+def service_worker():
+    response = app.send_static_file("sw.js")
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
+@app.get("/offline")
+def offline_page():
+    return app.send_static_file("offline.html")
+
+
 @app.context_processor
 def inject_admin_email():
     return {"config_admin_email": os.getenv("ADMIN_EMAIL", "").strip().lower()}
