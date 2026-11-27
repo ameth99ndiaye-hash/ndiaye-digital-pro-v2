@@ -446,6 +446,7 @@ def offline_sync():
         except Exception:
             app.logger.exception("Offline operation sync failed")
             results.append({"operation_id": operation.get("operation_id"), "ok": False, "error": "sync_failed"})
+            break
     return jsonify({"results": results})
 
 
