@@ -1,6 +1,8 @@
 (() => {
   const status = document.querySelector("[data-connection-status]");
   const installButton = document.querySelector("[data-install-app]");
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
   let installPrompt = null;
 
   function updateStatus() {
@@ -20,13 +22,21 @@
     });
   }
 
+  if (installButton && isIOS && !isStandalone) {
+    installButton.hidden = false;
+    installButton.textContent = "Installer sur iPhone";
+    installButton.addEventListener("click", () => {
+      alert("Sur iPhone : touchez le bouton Partager de Safari, puis « Sur l’écran d’accueil », et enfin « Ajouter ».");
+    });
+  }
+
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     installPrompt = event;
-    if (installButton) installButton.hidden = false;
+    if (installButton && !isIOS) installButton.hidden = false;
   });
 
-  if (installButton) {
+  if (installButton && !isIOS) {
     installButton.addEventListener("click", async () => {
       if (!installPrompt) return;
       installPrompt.prompt();
