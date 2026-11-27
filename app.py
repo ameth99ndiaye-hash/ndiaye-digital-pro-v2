@@ -6,8 +6,8 @@ from functools import wraps
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, flash, g, redirect, render_template, request, session, url_for
-from flask_wtf.csrf import CSRFProtect
+from flask import Flask, flash, g, jsonify, redirect, render_template, request, session, url_for
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from supabase_client import check_supabase_connection
@@ -123,16 +123,38 @@ def login_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if "merchant_id" not in session:
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "authentication_required"}), 401
             return redirect(url_for("login"))
         if supabase_auth_enabled():
             g.auth_record = load_auth_session()
             if not g.auth_record:
+                if request.path.startswith("/api/"):
+                    return jsonify({"error": "authentication_required"}), 401
                 return redirect(url_for("login"))
         return fn(*args, **kwargs)
     return wrapper
 
 
 init_db()
+
+
+@app.get("/sw.js")
+def service_worker():
+    response = app.send_static_file("sw.js")
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
+@app.get("/offline-workspace")
+def offline_workspace():
+    return app.send_static_file("offline-workspace.html")
+
+
+@app.get("/offline")
+def offline_page():
+    return app.send_static_file("offline.html")
 
 
 @app.context_processor
@@ -378,6 +400,58 @@ def logout():
             con.execute("DELETE FROM auth_sessions WHERE sid=?", (sid,))
     session.clear()
     return redirect(url_for("index"))
+
+
+@app.get("/api/offline-bootstrap")
+@login_required
+def offline_bootstrap():
+    if not supabase_auth_enabled():
+        return jsonify({"error": "offline_sync_requires_supabase"}), 503
+    merchant_id = session["merchant_id"]
+    try:
+        return jsonify({
+            "merchant_id": merchant_id,
+            "shop_name": session.get("shop_name", "Ma boutique"),
+            "products": list_products(g.auth_record["access_token"], merchant_id),
+            "movements": list_stock_movements(g.auth_record["access_token"], merchant_id),
+            "sales": list_sales(g.auth_record["access_token"], merchant_id),
+            "csrf_token": generate_csrf(),
+        })
+    except Exception:
+        app.logger.exception("Offline bootstrap failed")
+        return jsonify({"error": "offline_bootstrap_failed"}), 503
+
+
+@app.post("/api/offline-sync")
+@login_required
+def offline_sync():
+    if not supabase_auth_enabled():
+        return jsonify({"error": "offline_sync_requires_supabase"}), 503
+    body = request.get_json(silent=True) or {}
+    operations = body.get("operations")
+    if not isinstance(operations, list) or not 1 <= len(operations) <= 50:
+        return jsonify({"error": "invalid_operations_batch"}), 400
+    from supabase_client import create_supabase_client
+    client = create_supabase_client(access_token=g.auth_record["access_token"])
+    merchant_id = session["merchant_id"]
+    results = []
+    for operation in operations:
+        if not isinstance(operation, dict):
+            results.append({"operation_id": None, "ok": False, "error": "invalid_operation"})
+            continue
+        try:
+            result = client.rpc("sync_offline_operation", {
+                "p_merchant_id": merchant_id,
+                "p_operation_id": operation.get("operation_id"),
+                "p_operation_type": operation.get("type"),
+                "p_payload": operation.get("payload"),
+            }).execute().data
+            results.append({"operation_id": operation.get("operation_id"), "ok": True, "result": result})
+        except Exception:
+            app.logger.exception("Offline operation sync failed")
+            results.append({"operation_id": operation.get("operation_id"), "ok": False, "error": "sync_failed"})
+            break
+    return jsonify({"results": results})
 
 
 @app.get("/health")

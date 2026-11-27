@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080808"><title>Mode hors ligne · NDIAYE DIGITAL PRO</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#080808;color:#f5f1e8;font:15px system-ui;padding:18px}
+main{max-width:850px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px solid #594626;padding:12px 0 18px}
+.brand{font:700 22px Georgia;color:#f5f1e8}.brand span{color:#d6ad57}.muted{color:#aaa397}.panel{background:#121212;border:1px solid #594626;border-radius:14px;padding:18px;margin:16px 0}
+h1,h2{color:#d6ad57}h1{font-size:26px}h2{font-size:18px;margin-top:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+label{display:block;color:#d5c9b5;font-size:13px}input,select{display:block;width:100%;margin-top:6px;padding:12px;border:1px solid #594626;border-radius:8px;background:#080808;color:#fff}
+button,a.btn{display:inline-block;padding:11px 16px;border:1px solid #d6ad57;border-radius:8px;background:#d6ad57;color:#080808;font-weight:700;text-decoration:none;cursor:pointer;margin-top:10px}
+button.secondary,a.secondary{background:transparent;color:#d6ad57}button:disabled{opacity:.5;cursor:not-allowed}
+.notice{padding:10px;border-radius:8px;background:#1d1a13;color:#e8c879;margin:12px 0}
+table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:9px;border-bottom:1px solid #332a1b;font-size:13px}
+.small{font-size:12px;color:#aaa397}#workspace[hidden],#unlock[hidden]{display:none}
+</style></head>
+<body><main>
+<header class="top"><div class="brand">N<span>D</span>P <span class="muted">MODE HORS LIGNE</span></div><a class="secondary" href="/">Retour à l’application</a></header>
+<section id="unlock" class="panel"><h1>Ouvrir les données locales</h1><p class="muted">Saisis le code hors ligne créé lorsque tu as préparé l’application sur Internet.</p>
+<label>Code hors ligne (8 caractères minimum)<input id="pin" type="password" inputmode="numeric" autocomplete="off" minlength="6" maxlength="64"></label>
+<button id="unlockButton">Déverrouiller</button><p id="unlockMessage" class="small" aria-live="polite"></p></section>
+<section id="workspace" hidden>
+<div class="panel"><h1 id="shopName">Ma boutique</h1><p id="connection" class="muted">État de connexion</p><p id="queueStatus" class="notice" aria-live="polite"></p><button id="syncButton">Synchroniser maintenant</button><button id="lockButton" class="secondary">Verrouiller</button></div>
+<div class="panel"><h2>Ajouter un produit</h2><form id="productForm" class="grid">
+<label>Nom<input name="name" maxlength="160" required></label><label>Référence<input name="sku" maxlength="80"></label>
+<label>Quantité initiale<input name="quantity" type="number" min="0" value="0" required></label><label>Seuil d’alerte<input name="min_quantity" type="number" min="0" value="0" required></label>
+<label>Prix unitaire (FCFA)<input name="unit_price" type="number" min="0" value="0" required></label><div><button>Ajouter au catalogue</button></div></form></div>
+<div class="panel"><h2>Enregistrer un mouvement de stock</h2><form id="stockForm" class="grid">
+<label>Produit<select name="product_id" required></select></label><label>Type<select name="movement_type"><option value="IN">Entrée</option><option value="OUT">Sortie</option></select></label>
+<label>Quantité<input name="quantity" type="number" min="1" required></label><label>Note<input name="note" maxlength="250"></label><div><button>Enregistrer le mouvement</button></div></form></div>
+<div class="panel"><h2>Enregistrer une vente</h2><form id="saleForm" class="grid">
+<label>Produit<select name="product_id" required></select></label><label>Quantité<input name="quantity" type="number" min="1" required></label><div><button>Confirmer la vente</button></div></form></div>
+<div class="panel"><h2>Catalogue local</h2><div id="productsTable"></div></div>
+<div class="panel"><h2>Derniers mouvements</h2><div id="movementsTable"></div></div><div class="panel"><h2>Dernières ventes</h2><div id="salesTable"></div></div>
+<p class="small">Les données restent chiffrées sur cet appareil. Une synchronisation nécessite une session encore valide et une connexion Internet. Ne supprime pas les données du navigateur avant d’avoir synchronisé les opérations en attente.</p>
+</section>
+</main><script src="/static/offline-workspace.js" defer></script></body></html>

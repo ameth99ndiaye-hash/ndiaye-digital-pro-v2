@@ -1,0 +1,13 @@
+{
+  "name": "NDIAYE DIGITAL PRO",
+  "short_name": "NDIAYE PRO",
+  "description": "Gestion commerciale et stock",
+  "lang": "fr",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#080808",
+  "orientation": "any",
+  "icons": [{"src": "/static/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}]
+}
