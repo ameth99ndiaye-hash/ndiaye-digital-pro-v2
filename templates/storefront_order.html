@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Commande · NDIAYE DIGITAL PRO{% endblock %}
+{% block content %}
+<section class="form-card">
+  <div class="eyebrow">NDIAYE DIGITAL PRO</div>
+  <h1>Votre demande</h1>
+  <p class="muted">Remplissez ce formulaire. L'équipe vous contactera pour confirmer la formule, les conditions et le moyen de paiement. Aucun paiement n'est effectué sur cette page.</p>
+  <form method="post" action="{{ url_for('storefront_order') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div aria-hidden="true" style="position:absolute;left:-10000px"><label>Site web<input name="website" tabindex="-1" autocomplete="off"></label></div>
+    <label>Nom et prénom *</label><input name="contact_name" required maxlength="120" autocomplete="name">
+    <label>Nom du commerce / entreprise *</label><input name="shop_name" required maxlength="120">
+    <label>Téléphone WhatsApp *</label><input name="phone" required maxlength="40" autocomplete="tel" placeholder="+221 ...">
+    <label>Pays *</label><input name="country" required maxlength="80" value="Sénégal" autocomplete="country-name">
+    <label>E-mail (facultatif)</label><input type="email" name="email" maxlength="254" autocomplete="email">
+    <label>Formule souhaitée *</label>
+    <select name="plan_code" required>
+      <option value="demo" {% if request.args.get('plan_code') == 'demo' %}selected{% endif %}>Démonstration gratuite</option>
+      <option value="monthly" {% if request.args.get('plan_code') == 'monthly' %}selected{% endif %}>Mensuelle — 2 000 FCFA</option>
+      <option value="annual" {% if request.args.get('plan_code') == 'annual' %}selected{% endif %}>Annuelle — 20 000 FCFA</option>
+      <option value="lifetime" {% if request.args.get('plan_code') == 'lifetime' %}selected{% endif %}>Licence à vie — 50 000 FCFA</option>
+    </select>
+    <label>Votre besoin (facultatif)</label><textarea name="message" rows="4" maxlength="1000" placeholder="Nombre d'appareils, activité, questions..."></textarea>
+    <button class="btn gold full" type="submit">Envoyer ma demande</button>
+  </form>
+  <p class="store-small">Vos informations servent uniquement à traiter cette demande. N'envoyez pas de mot de passe ni de code secret de paiement.</p>
+</section>
+{% endblock %}
