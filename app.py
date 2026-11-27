@@ -393,6 +393,11 @@ def logout():
     return redirect(url_for("index"))
 
 
+@app.get("/offline")
+def offline():
+    return render_template("offline.html")
+
+
 @app.get("/health")
 def health():
     return {
