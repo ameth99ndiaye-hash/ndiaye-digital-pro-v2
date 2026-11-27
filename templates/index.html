@@ -1,45 +1,26 @@
-
 {% extends "base.html" %}
-{% block title %}NDIAYE DIGITAL PRO · Business & Commerce{% endblock %}
+{% block title %}NDIAYE DIGITAL PRO — Gérez votre commerce avec maîtrise{% endblock %}
 {% block content %}
-
-<section class="hero">
-  <div class="eyebrow">BUSINESS · COMMERCE · GROWTH</div>
-
-  <h1>
-    Votre commerce.<br>
-    <em>En mieux.</em>
-  </h1>
-
-  <p>
-    Une plateforme pour organiser vos ventes,
-    vos produits et votre boutique en ligne.
-  </p>
-
-  <div class="actions">
-    <a class="btn gold" href="/login">Accéder à mon espace</a>
-    <a class="btn ghost" href="/login">Se connecter</a>
-  </div>
+<section class="store-hero">
+  <div class="store-kicker">LA GESTION COMMERCIALE, EN TOUTE SIMPLICITÉ</div><div class="store-mark">N<span>D</span>P</div>
+  <h1>Pilotez votre commerce.<br><em>Où que vous soyez.</em></h1>
+  <p class="store-lead">NDIAYE DIGITAL PRO vous aide à suivre vos produits, votre stock et vos ventes depuis votre téléphone ou votre ordinateur. Travaillez même hors connexion, puis synchronisez vos opérations lorsque vous retrouvez Internet.</p>
+  <div class="store-actions"><a class="btn gold" href="#tarifs">Découvrir les offres</a><a class="btn ghost" href="/login">Accès client</a></div>
+  <div class="store-note">Application installable · Téléphone et ordinateur · Mode hors ligne avec synchronisation</div>
 </section>
-
-<section class="features">
-  <article>
-    <b>01</b>
-    <h3>Gestion commerciale</h3>
-    <p>Centralisez vos opérations.</p>
-  </article>
-
-  <article>
-    <b>02</b>
-    <h3>Boutique en ligne</h3>
-    <p>Préparez votre vitrine numérique.</p>
-  </article>
-
-  <article>
-    <b>03</b>
-    <h3>Analyse intelligente</h3>
-    <p>Développez votre activité étape par étape.</p>
-  </article>
-</section>
-
+<section class="store-section"><div class="store-heading"><span>POUR VOTRE ACTIVITÉ</span><h2>Tout votre commerce, au même endroit.</h2></div>
+<div class="store-grid">
+<article class="store-card"><div class="store-icon">01</div><h3>Produits & stock</h3><p>Organisez vos articles, surveillez les quantités et enregistrez les mouvements de stock.</p></article>
+<article class="store-card"><div class="store-icon">02</div><h3>Ventes & suivi</h3><p>Enregistrez les ventes et consultez l'historique de votre activité.</p></article>
+<article class="store-card"><div class="store-icon">03</div><h3>En ligne & hors ligne</h3><p>Continuez certaines opérations sans connexion, puis synchronisez-les au retour d'Internet.</p></article>
+<article class="store-card"><div class="store-icon">04</div><h3>Sur vos appareils</h3><p>Installez l'application sur les appareils compatibles et retrouvez votre espace après connexion.</p></article>
+</div></section>
+<section class="store-section" id="tarifs"><div class="store-heading"><span>CHOISISSEZ VOTRE FORMULE</span><h2>Une formule adaptée à votre commerce.</h2><p>La démonstration est gratuite et sans engagement. Les tarifs des licences sont communiqués avant toute commande.</p></div>
+<div class="store-pricing">
+<article class="price-card"><span class="price-label">FLEXIBLE</span><h3>Mensuel</h3><div class="price">2 000 <small>FCFA / mois</small></div><p>Pour commencer avec un paiement mensuel.</p><ul><li>Accès à l'application</li><li>Gestion des produits, stock et ventes</li><li>Fonctions hors ligne compatibles</li></ul><a class="btn gold" href="/login">Espace client</a></article>
+<article class="price-card"><span class="price-label">ENGAGEMENT 12 MOIS</span><h3>Licence annuelle</h3><div class="price">Sur devis</div><p>Un règlement annuel pour votre période de licence.</p><ul><li>Accès selon les conditions de licence</li><li>Renouvellement chaque année</li><li>Tarif communiqué avant paiement</li></ul><a class="btn ghost" href="#commande">Demander les conditions</a></article>
+<article class="price-card featured"><span class="price-label">ACHAT UNIQUE</span><h3>Licence définitive</h3><div class="price">Sur devis</div><p>Un paiement unique selon le périmètre convenu.</p><ul><li>Conditions précisées au devis</li><li>Nombre d'appareils défini à l'achat</li><li>Mises à jour et services précisés au contrat</li></ul><a class="btn ghost" href="#commande">Demander les conditions</a></article>
+</div></section>
+<section class="store-section store-demo"><div><span class="store-kicker">AVANT DE VOUS ENGAGER</span><h2>Voyez l'application en action.</h2><p>Demandez une démonstration gratuite pour découvrir le tableau de bord, les produits, le stock, les ventes et le fonctionnement hors ligne.</p></div><a class="btn gold" href="#commande">Demander une démonstration</a></section>
+<section class="store-section" id="commande"><div class="store-heading"><span>COMMANDES & INFORMATIONS</span><h2>Parlons de votre projet.</h2><p>Pour obtenir une démonstration, un devis annuel ou une licence définitive, contactez l'administrateur de NDIAYE DIGITAL PRO par le canal officiel qui vous a transmis cette page. Au Sénégal, les paiements Wave et Orange Money sont traités après confirmation des coordonnées et du montant. Pour l'international, le moyen de paiement sera confirmé selon le pays.</p></div><div class="store-actions"><a class="btn gold" href="/login">Espace client</a><a class="btn ghost" href="#tarifs">Revoir les offres</a></div><p class="store-small">Ne versez aucun paiement avant d'avoir reçu une confirmation écrite du prix, de la formule, des conditions de licence et des coordonnées officielles de paiement.</p></section>
 {% endblock %}
