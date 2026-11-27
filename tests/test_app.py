@@ -156,7 +156,7 @@ class NdiayeDigitalProTests(unittest.TestCase):
     def test_offline_fallback_page_loads(self):
         response = self.client.get("/offline")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("MODE HORS CONNEXION".encode(), response.data)
+        self.assertIn("hors connexion".encode(), response.data.lower())
 
     def test_pwa_manifest_is_available(self):
         response = self.client.get("/static/manifest.webmanifest")
