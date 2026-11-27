@@ -173,11 +173,7 @@ class NdiayeDigitalProTests(unittest.TestCase):
 
     def test_offline_bootstrap_returns_current_merchant_snapshot(self):
         self.login_as_merchant()
-        with patch.object(application, "supabase_auth_enabled", return_value=True), \\
-             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \\
-             patch.object(application, "list_products", return_value=[{"id": "p1"}]), \\
-             patch.object(application, "list_stock_movements", return_value=[]), \\
-             patch.object(application, "list_sales", return_value=[]):
+        with patch.object(application, "supabase_auth_enabled", return_value=True), patch.object(application, "load_auth_session", return_value={"access_token": "token"}), patch.object(application, "list_products", return_value=[{"id": "p1"}]), patch.object(application, "list_stock_movements", return_value=[]), patch.object(application, "list_sales", return_value=[]):
             response = self.client.get("/api/offline-bootstrap")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json["merchant_id"], "merchant-uuid-test")
@@ -202,9 +198,7 @@ class NdiayeDigitalProTests(unittest.TestCase):
             "type": "product_create",
             "payload": {"product_id": "22222222-2222-4222-8222-222222222222", "name": "Riz", "sku": "", "quantity": 2, "min_quantity": 0, "unit_price": 500},
         }
-        with patch.object(application, "supabase_auth_enabled", return_value=True), \\
-             patch.object(application, "load_auth_session", return_value={"access_token": "token"}), \\
-             patch("supabase_client.create_supabase_client", return_value=fake):
+        with patch.object(application, "supabase_auth_enabled", return_value=True), patch.object(application, "load_auth_session", return_value={"access_token": "token"}), patch("supabase_client.create_supabase_client", return_value=fake):
             response = self.client.post("/api/offline-sync", json={"operations": [operation]})
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json["results"][0]["ok"])
