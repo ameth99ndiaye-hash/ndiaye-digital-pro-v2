@@ -169,8 +169,7 @@ class NdiayeDigitalProTests(unittest.TestCase):
     def test_offline_api_requires_login(self):
         for path in ("/api/offline-bootstrap", "/api/offline-sync"):
             response = self.client.get(path) if path.endswith("bootstrap") else self.client.post(path, json={"operations": []})
-            self.assertEqual(response.status_code, 302, path)
-            self.assertIn("/login", response.headers["Location"])
+            self.assertEqual(response.status_code, 401, path)
 
     def test_offline_bootstrap_returns_current_merchant_snapshot(self):
         self.login_as_merchant()
