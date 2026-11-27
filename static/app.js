@@ -22,8 +22,8 @@
   async function encrypt(data,pin){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12)),key=await makeKey(pin,salt);const cipher=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(data)));return {version:1,salt:Array.from(salt),iv:Array.from(iv),cipher:Array.from(new Uint8Array(cipher)),merchant_id:data.merchant_id,updated_at:new Date().toISOString()};}
   if(prepareButton)prepareButton.addEventListener("click",async()=>{
     if(!navigator.onLine){alert("Connecte-toi à Internet pour préparer les données hors ligne.");return;}
-    const pin=prompt("Crée un code secret hors ligne d’au moins 6 caractères. Ne le partage avec personne.");
-    if(!pin||pin.length<6){alert("Le code doit contenir au moins 6 caractères.");return;}
+    const pin=prompt("Crée un code secret hors ligne d’au moins 8 caractères. Ne le partage avec personne.");
+    if(!pin||pin.length<8){alert("Le code doit contenir au moins 8 caractères.");return;}
     const confirm=prompt("Confirme ton code secret hors ligne.");
     if(pin!==confirm){alert("Les deux codes ne correspondent pas.");return;}
     prepareButton.disabled=true;prepareButton.textContent="Préparation…";
